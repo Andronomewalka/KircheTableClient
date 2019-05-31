@@ -1,0 +1,529 @@
+﻿<UserControl x:Class="Kirche_Client.Views.MainTabView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:viewmodels="clr-namespace:Kirche_Client.ViewModels.MainTab"
+             xmlns:controls="http://metro.mahapps.com/winfx/xaml/controls"
+             xmlns:utility="clr-namespace:Kirche_Client.Utility"
+             xmlns:converters="clr-namespace:Kirche_Client.Converters"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             mc:Ignorable="d">
+
+    <UserControl.Resources>
+
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <converters:CollectionToStringConverter x:Key="CollToStr"/>
+        <converters:VisibilityToStringConverter x:Key="VisToStr"/>
+        <converters:StringToDateConverter x:Key="StrToDate"/>
+
+        <Style x:Key="Wrapping_TextBlock" TargetType="{x:Type TextBlock}">
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Padding" Value="5,0,5,0"/>
+        </Style>
+
+        <Style x:Key="Wrapping_Centering_TextBlock" TargetType="{x:Type TextBlock}">
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="TextBlock.TextAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="5,0,5,0"/>
+        </Style>
+
+        <Style x:Key="GridHeader_Centering" TargetType="DataGridColumnHeader" BasedOn="{StaticResource MetroDataGridColumnHeader}">
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="5,0,5,0"/>
+        </Style>
+
+        <Style x:Key="SearchPanelAnimation" TargetType="{x:Type StackPanel}">
+            <Style.Triggers>
+                <Trigger Property="Visibility" Value="Visible">
+
+                    <Trigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation 
+                                    Storyboard.TargetProperty="Opacity"
+                                    From="0"
+                                    To="1" Duration="0:0:0.3" />
+                                <ThicknessAnimationUsingKeyFrames 
+                                    Storyboard.TargetProperty="Margin"
+                                    BeginTime="0:0:0">
+                                    <SplineThicknessKeyFrame KeyTime="0:0:0" Value="15,0,0,0" />
+                                    <SplineThicknessKeyFrame KeyTime="0:0:0.3" Value="0,0,0,0" />
+                                </ThicknessAnimationUsingKeyFrames>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.EnterActions>
+
+                    <Trigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation 
+                                    Storyboard.TargetProperty="Opacity"
+                                    From="1"
+                                    To="0" Duration="0:0:0.3" />
+                                <ThicknessAnimationUsingKeyFrames 
+                                    Storyboard.TargetProperty="Margin"
+                                    BeginTime="0:0:0">
+                                    <SplineThicknessKeyFrame KeyTime="0:0:0" Value="0,0,0,0" />
+                                    <SplineThicknessKeyFrame KeyTime="0:0:0.3" Value="15,0,0,0" />
+                                </ThicknessAnimationUsingKeyFrames>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.ExitActions>
+
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+
+        <Style x:Key="MenuStyle" TargetType="Menu" BasedOn="{StaticResource MetroMenu}">
+            <Style.Resources>
+
+                <SolidColorBrush x:Key="MenuSeparatorBorderBrush" Color="#333337"/>
+                <SolidColorBrush x:Key="MenuItemHighlightedBackground" Color="#3E3E40"/>
+                <SolidColorBrush x:Key="SubmenuItemBackground" Color="#1B1B1C"/>
+                <SolidColorBrush x:Key="SubmenuItemBackgroundHighlighted" Color="#333334"/>
+                <SolidColorBrush x:Key="MenuDisabledForeground" Color="#656565"/>
+                <SolidColorBrush x:Key="BackgroundHighlighted" Color="#54545C"/>
+                <SolidColorBrush x:Key="BorderBrushHighlighted" Color="#6A6A75"/>
+                <SolidColorBrush x:Key="BackgroundSelected" Color="#007ACC"/>
+                <SolidColorBrush x:Key="BorderBrushSelected" Color="#1C97EA"/>
+                <SolidColorBrush x:Key="BackgroundNormal" Color="#3F3F46"/>
+                <SolidColorBrush x:Key="BorderBrushNormal" Color="#54545C"/>
+
+                <Style TargetType="{x:Type MenuItem}">
+                    <Setter Property="Foreground" Value="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type Menu}}}"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type MenuItem}">
+                                <!--Border 1-->
+                                <Border x:Name="Border" Background="Transparent" BorderBrush="Transparent" 
+                                    BorderThickness="1" SnapsToDevicePixels="False">
+                                    <Grid x:Name="Grid">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition x:Name="Col0" MaxWidth="1" Width="Auto" 
+                                                          SharedSizeGroup="MenuItemIconColumnGroup"/>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="MenuTextColumnGroup"/>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="MenuItemIGTColumnGroup"/>
+                                            <ColumnDefinition x:Name="Col3" Width="14"/>
+                                        </Grid.ColumnDefinitions>
+                                        <ContentPresenter Grid.Column="0" x:Name="Icon" VerticalAlignment="Center" 
+                                                      ContentSource="Icon"/>
+                                        <ContentPresenter Grid.Column="1" Margin="{TemplateBinding Padding}" 
+                                                      x:Name="HeaderHost" RecognizesAccessKey="True" 
+                                                      ContentSource="Header" VerticalAlignment="Center"/>
+                                        <ContentPresenter Grid.Column="2" Margin="8,1,8,1" x:Name="IGTHost" 
+                                                      ContentSource="InputGestureText" VerticalAlignment="Center"/>
+                                        <Grid Grid.Column="3" Margin="4,0,6,0" x:Name="ArrowPanel" VerticalAlignment="Center">
+                                            <Path x:Name="ArrowPanelPath" HorizontalAlignment="Right" VerticalAlignment="Center" 
+                                              Fill="{TemplateBinding Foreground}" Data="M0,0 L0,8 L4,4 z"/>
+                                        </Grid>
+                                        <Popup IsOpen="{Binding Path=IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}" 
+                                           Placement="Right" HorizontalOffset="-1" x:Name="SubMenuPopup" Focusable="false"
+                                           PopupAnimation="{DynamicResource {x:Static SystemParameters.MenuPopupAnimationKey}}"
+                                           AllowsTransparency="True">
+                                            <Grid Margin="0,0,5,5">
+                                                <!--Border 2-->
+                                                <Border x:Name="SubMenuBorder" 
+                                                    BorderBrush="{StaticResource MenuSeparatorBorderBrush}"
+                                                    BorderThickness="1" Background="{StaticResource SubmenuItemBackground}" 
+                                                    SnapsToDevicePixels="True">
+                                                    <Grid x:Name="SubMenu" Grid.IsSharedSizeScope="True" Margin="2">
+                                                        <StackPanel IsItemsHost="True" 
+                                                                KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                                                    </Grid>
+                                                    <Border.Effect>
+                                                        <DropShadowEffect ShadowDepth="2" Color="Black"/>
+                                                    </Border.Effect>
+                                                </Border>
+                                                <!--Border 3-->
+                                                <Border Margin="1,0,0,0" x:Name="TransitionBorder" Width="0" Height="2" 
+                                                    VerticalAlignment="Top" HorizontalAlignment="Left" 
+                                                    Background="{StaticResource SubmenuItemBackground}" SnapsToDevicePixels="False"
+                                                    BorderThickness="1" BorderBrush="{StaticResource SubmenuItemBackground}"/>
+                                            </Grid>
+                                        </Popup>
+                                    </Grid>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="Role" Value="TopLevelHeader">
+                                        <Setter Property="Padding" Value="6,0,6,2"/>
+                                        <Setter TargetName="SubMenuPopup" Property="Placement" Value="Bottom"/>
+                                        <Setter TargetName="Col0" Property="MinWidth" Value="0"/>
+                                        <Setter TargetName="Col3" Property="Width" Value="Auto"/>
+                                        <Setter TargetName="Icon" Property="Visibility" Value="Collapsed"/>
+                                        <Setter TargetName="IGTHost" Property="Visibility" Value="Collapsed" />
+                                        <Setter TargetName="ArrowPanel" Property="Visibility" Value="Collapsed"/>
+                                        <Setter TargetName="SubMenuBorder" Property="BorderThickness" Value="1,1,1,1"/>
+                                        <Setter TargetName="SubMenu" Property="Margin" Value="2,3,2,2"/>
+                                        <Setter TargetName="TransitionBorder" Property="Width" Value="{Binding ActualWidth, ElementName=Grid}"/>
+                                    </Trigger>
+                                    <Trigger Property="Role" Value="TopLevelItem">
+                                        <Setter Property="Padding" Value="6,0,6,2"/>
+                                        <Setter TargetName="Col0" Property="MinWidth" Value="0"/>
+                                        <Setter TargetName="Col3" Property="Width" Value="Auto"/>
+                                        <Setter TargetName="Icon" Property="Visibility" Value="Collapsed"/>
+                                        <Setter TargetName="IGTHost" Property="Visibility" Value="Collapsed"/>
+                                        <Setter TargetName="ArrowPanel" Property="Visibility" Value="Collapsed"/>
+                                    </Trigger>
+                                    <Trigger Property="Role" Value="SubmenuHeader">
+                                        <Setter Property="DockPanel.Dock" Value="Top"/>
+                                        <Setter Property="Padding" Value="10,3,0,3"/>
+                                        <Setter TargetName="Border" Property="MinHeight" Value="22"/>
+                                        <Setter TargetName="Border" Property="Background" Value="{StaticResource SubmenuItemBackground}"/>
+                                    </Trigger>
+                                    <Trigger Property="Role" Value="SubmenuItem">
+                                        <Setter Property="DockPanel.Dock" Value="Top"/>
+                                        <Setter Property="Padding" Value="10,3,0,3"/>
+                                        <Setter TargetName="Border" Property="MinHeight" Value="22"/>
+                                        <Setter TargetName="ArrowPanel" Property="Visibility" Value="Collapsed"/>
+                                        <Setter TargetName="Border" Property="Background" Value="{StaticResource SubmenuItemBackground}"/>
+                                    </Trigger>
+                                    <MultiTrigger>
+                                        <MultiTrigger.Conditions>
+                                            <Condition Property="IsHighlighted" Value="true"/>
+                                            <Condition Property="Role" Value="TopLevelHeader"/>
+                                        </MultiTrigger.Conditions>
+                                        <Setter TargetName="Border" Property="Background" Value="{StaticResource MenuItemHighlightedBackground}"/>
+                                    </MultiTrigger>
+                                    <MultiTrigger>
+                                        <MultiTrigger.Conditions>
+                                            <Condition Property="IsHighlighted" Value="true"/>
+                                            <Condition Property="Role" Value="TopLevelItem"/>
+                                        </MultiTrigger.Conditions>
+                                        <Setter TargetName="Border" Property="Background" Value="{StaticResource MenuItemHighlightedBackground}"/>
+                                    </MultiTrigger>
+                                    <MultiTrigger>
+                                        <MultiTrigger.Conditions>
+                                            <Condition Property="IsHighlighted" Value="true"/>
+                                            <Condition Property="Role" Value="SubmenuHeader"/>
+                                        </MultiTrigger.Conditions>
+                                        <Setter TargetName="Border" Property="Background" Value="{StaticResource SubmenuItemBackgroundHighlighted}"/>
+                                    </MultiTrigger>
+                                    <MultiTrigger>
+                                        <MultiTrigger.Conditions>
+                                            <Condition Property="IsHighlighted" Value="true"/>
+                                            <Condition Property="Role" Value="SubmenuItem"/>
+                                        </MultiTrigger.Conditions>
+                                        <Setter TargetName="Border" Property="Background" Value="{StaticResource SubmenuItemBackgroundHighlighted}"/>
+                                    </MultiTrigger>
+                                    <MultiTrigger>
+                                        <MultiTrigger.Conditions>
+                                            <Condition Property="IsSubmenuOpen" Value="true"/>
+                                            <Condition Property="Role" Value="TopLevelHeader"/>
+                                        </MultiTrigger.Conditions>
+                                        <Setter TargetName="Border" Property="Background" Value="{StaticResource SubmenuItemBackground}"/>
+                                        <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource MenuSeparatorBorderBrush}"/>
+                                        <Setter TargetName="Border" Property="BorderThickness" Value="1,1,1,0"/>
+                                    </MultiTrigger>
+                                    <Trigger Property="IsSubmenuOpen" Value="true">
+                                        <Setter TargetName="ArrowPanelPath" Property="Fill" Value="{StaticResource BackgroundSelected}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsSuspendingPopupAnimation" Value="true">
+                                        <Setter TargetName="SubMenuPopup" Property="PopupAnimation" Value="None"/>
+                                    </Trigger>
+                                    <Trigger Property="Icon" Value="{x:Null}">
+                                        <Setter TargetName="Icon" Property="Visibility" Value="Collapsed"/>
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter Property="Foreground" Value="{StaticResource MenuDisabledForeground}"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Style.Resources>
+        </Style>
+
+        <Style TargetType="{x:Type MenuItem}" x:Key="MenuItemStyle" BasedOn="{StaticResource MetroMenuItem}">
+            <Setter Property="Margin" Value="-5,0,0,0"></Setter>
+            <Setter Property="Padding" Value="0,12,0,12"></Setter>
+        </Style>
+
+    </UserControl.Resources>
+
+    <Grid x:Name="MainGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel 
+            Name="ButtonsPanel"
+            Grid.Row="0"
+            VerticalAlignment="Center">
+            <ToggleButton
+                x:Name="SearchButton"
+                DockPanel.Dock="Left"
+                Margin="5" Width="100" Height="25"
+                HorizontalAlignment="Left"
+                Command="{Binding Path=SearchButtonCommand}"
+                IsChecked="{Binding Path=SearchButtonChecked, Mode=TwoWay}"
+                Style="{DynamicResource MetroFlatToggleButton}">
+                <StackPanel Orientation="Horizontal" >
+                    <iconPacks:PackIconMaterial
+                        Width="25"
+                        Height="15"
+                        Kind="Magnify"
+                        VerticalAlignment="Center"
+                        Margin="-9,0,0,0"/>
+                    <TextBlock Text="Filter Bar" VerticalAlignment="Center" FontSize="13"/>
+                </StackPanel>
+            </ToggleButton>
+
+            <Menu
+                Name="MenuColumnVisisbility"
+                DockPanel.Dock="Right"
+                Margin="5"
+                HorizontalAlignment="Right">
+                <MenuItem  
+                    Header="Columns"
+                    ItemsSource="{Binding Path=ColumnsVisibilityList}">
+                    <MenuItem.ItemTemplate>
+                        <DataTemplate>
+                            <CheckBox
+                                Name="ColVisibilityItem"
+                                IsChecked="{Binding Path=IsVisible, Mode=TwoWay}" 
+                                Content="{Binding Path=Name}"
+                                Command="{Binding Path=DataContext.ColVisibilityItemCommand, 
+                                RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Content}">
+                            </CheckBox>
+                        </DataTemplate>
+                    </MenuItem.ItemTemplate>
+                </MenuItem>
+            </Menu>
+        </DockPanel>
+
+        <StackPanel 
+            Grid.Row="1"
+            x:Name="SearchPanel"
+            Orientation="Horizontal" 
+            VerticalAlignment="Center"
+            Visibility="{Binding ElementName=SearchButton, 
+            Path=IsChecked, Converter={StaticResource BoolToVis}}">
+
+            <TextBox
+                Text="{Binding Path=Filter.IdFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                Width="{Binding ElementName=IdColumn, Path=ActualWidth}"
+                Visibility="{Binding ElementName=IdColumn, Path=Visibility}"
+                VerticalContentAlignment="Center"
+                controls:TextBoxHelper.Watermark="id"
+                controls:TextBoxHelper.UseFloatingWatermark="True"
+                BorderThickness="2,1,1,1"/>
+
+            <ComboBox 
+                ItemsSource="{Binding Path=ComboSource.ChurchDistrictCombo}"
+                SelectedItem="{Binding RelativeSource={RelativeSource Self}, Path=Text, Mode=OneWayToSource}"
+                Text="{Binding Path=Filter.DistrictFilterText, Mode=TwoWay}"
+                IsEditable="True"
+                Width="{Binding ElementName=DistrictColumn, Path=ActualWidth}"
+                Visibility="{Binding ElementName=DistrictColumn, Path=Visibility}"
+                controls:TextBoxHelper.Watermark="district"
+                controls:TextBoxHelper.UseFloatingWatermark="True">
+            </ComboBox>
+
+            <TextBox
+                Text="{Binding Path=Filter.ChurchFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                Width="{Binding ElementName=ChurchColumn, Path=ActualWidth}"
+                Visibility="{Binding ElementName=ChurchColumn, Path=Visibility}"
+                VerticalContentAlignment="Center"
+                controls:TextBoxHelper.Watermark="church"
+                controls:TextBoxHelper.UseFloatingWatermark="True"/>
+
+            <ComboBox 
+                ItemsSource="{Binding Path=ComboSource.ProjectTypeCombo}"
+                SelectedItem="{Binding RelativeSource={RelativeSource Self}, Path=Text, Mode=OneWayToSource}"
+                Text="{Binding Path=Filter.ProjectFilterText, Mode=TwoWay}"
+                IsEditable="True"
+                Width="{Binding ElementName=ProjectColumn, Path=ActualWidth}"
+                Visibility="{Binding ElementName=ProjectColumn, Path=Visibility}"
+                controls:TextBoxHelper.Watermark="project type"
+                controls:TextBoxHelper.UseFloatingWatermark="True"/>
+
+            <Grid
+                Width="{Binding ElementName=YearStartColumn, Path=ActualWidth}"
+                Visibility="{Binding ElementName=YearStartColumn, Path=Visibility}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="25"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <ComboBox
+                    Grid.Column="0"
+                    ItemsSource="{Binding Path=ComboSource.SignFilterCombo}"
+                    SelectedItem="{Binding RelativeSource={RelativeSource Self}, Path=Text, Mode=OneWayToSource}"
+                    Text="{Binding Path=Filter.YearStartSignFilterText, Mode=TwoWay}"
+                    HorizontalContentAlignment="Center"
+                    Padding="0"/>
+                <DatePicker
+                    Grid.Column="1"
+                    Text="{Binding Path=Filter.YearStartFilterText, 
+                    Mode=TwoWay, 
+                    UpdateSourceTrigger=PropertyChanged}"
+                    SelectedDate="{Binding Path=Text, 
+                    RelativeSource={RelativeSource Self},
+                    Converter={StaticResource StrToDate}}"
+                    VerticalContentAlignment="Center"
+                    controls:TextBoxHelper.Watermark="year start"
+                    controls:TextBoxHelper.UseFloatingWatermark="True"/>
+            </Grid>
+
+            <Grid 
+                Width="{Binding ElementName=YearEndColumn, Path=ActualWidth}"
+                Visibility="{Binding ElementName=YearEndColumn, Path=Visibility}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="25"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <ComboBox
+                    Grid.Column="0"
+                    ItemsSource="{Binding Path=ComboSource.SignFilterCombo}"
+                    SelectedItem="{Binding RelativeSource={RelativeSource Self}, Path=Text, Mode=OneWayToSource}"
+                    Text="{Binding Path=Filter.YearEndSignFilterText, Mode=TwoWay}"
+                    HorizontalContentAlignment="Center"
+                    Padding="0"/>
+                <DatePicker
+                    Grid.Column="1"
+                    Text="{Binding Path=Filter.YearEndFilterText, 
+                    Mode=TwoWay, 
+                    UpdateSourceTrigger=PropertyChanged}"
+                    SelectedDate="{Binding Path=Text, 
+                    RelativeSource={RelativeSource Self},
+                    Converter={StaticResource StrToDate}}"
+                    VerticalContentAlignment="Center"
+                    controls:TextBoxHelper.Watermark="year end"
+                    controls:TextBoxHelper.UseFloatingWatermark="True"/>
+            </Grid>
+
+            <Grid 
+                Width="{Binding ElementName=PriceColumn, Path=ActualWidth}"
+                Visibility="{Binding ElementName=PriceColumn, Path=Visibility}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="25"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <ComboBox
+                    Grid.Column="0"
+                    ItemsSource="{Binding Path=ComboSource.SignFilterCombo}"
+                    SelectedItem="{Binding RelativeSource={RelativeSource Self}, Path=Text, Mode=OneWayToSource}"
+                    Text="{Binding Path=Filter.PriceSignFilterText, Mode=TwoWay}"
+                    HorizontalContentAlignment="Center"
+                    Padding="0"/>
+                <TextBox
+                    Grid.Column="1"
+                    Text="{Binding Path=Filter.PriceFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                    VerticalContentAlignment="Center"
+                    controls:TextBoxHelper.Watermark="price"
+                    controls:TextBoxHelper.UseFloatingWatermark="True"/>
+            </Grid>
+
+            <TextBox
+                Text="{Binding Path=Filter.DescriptionFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                Width="{Binding ElementName=DescriptionColumn, Path=ActualWidth}"
+                Visibility="{Binding ElementName=DescriptionColumn, Path=Visibility}"
+                VerticalContentAlignment="Center"
+                controls:TextBoxHelper.Watermark="description"
+                controls:TextBoxHelper.UseFloatingWatermark="True"/>
+
+        </StackPanel>
+
+        <DataGrid 
+            Grid.Row="2"
+            AutoGenerateColumns="False"
+            FrozenColumnCount="1"
+            CanUserAddRows="false"
+            MinRowHeight="50"
+            MinColumnWidth="50"
+            GridLinesVisibility="All"
+            ItemsSource="{Binding Path=ElemsView, UpdateSourceTrigger=PropertyChanged}"
+            IsReadOnly="True"
+            Margin="0,5,0,5"
+            SelectionUnit="Cell"
+            ColumnHeaderStyle="{StaticResource GridHeader_Centering}"
+            EnableRowVirtualization="True"
+            EnableColumnVirtualization="False"
+            VirtualizingStackPanel.IsVirtualizing="True"
+            VirtualizingStackPanel.VirtualizationMode="Standard"
+            AlternatingRowBackground="{StaticResource GrayBrush10}">
+
+            <DataGrid.Resources>
+                <utility:BindingProxy x:Key="ProxyUserControlContext" DataContext="{Binding}"/>
+            </DataGrid.Resources>
+
+            <DataGrid.Columns>
+
+                <DataGridTextColumn 
+                    x:Name="IdColumn"
+                    Header="Id"
+                    Visibility="{Binding Path=DataContext.ColumnsVisibilityList[0].IsVisible,
+                    Source={StaticResource ProxyUserControlContext}, Converter={StaticResource BoolToVis}}"
+                    Binding ="{Binding Path=Id}"
+                    ElementStyle="{StaticResource Wrapping_Centering_TextBlock}"/>
+
+                <DataGridTextColumn 
+                    x:Name="DistrictColumn"
+                    Header="District"
+                    Visibility="{Binding Path=DataContext.ColumnsVisibilityList[1].IsVisible,
+                    Source={StaticResource ProxyUserControlContext}, Converter={StaticResource BoolToVis}}"
+                    Binding ="{Binding Path=Church_District}" 
+                    ElementStyle="{StaticResource Wrapping_Centering_TextBlock}"/>
+
+                <DataGridTextColumn 
+                    x:Name="ChurchColumn"
+                    Header="Church"          
+                    Visibility="{Binding Path=DataContext.ColumnsVisibilityList[2].IsVisible,
+                    Source={StaticResource ProxyUserControlContext}, Converter={StaticResource BoolToVis}}"
+                    Binding ="{Binding Path=Church}"
+                    ElementStyle="{StaticResource Wrapping_Centering_TextBlock}"/>
+
+                <DataGridTextColumn
+                    x:Name="ProjectColumn"
+                    Header="Project Type"
+                    Visibility="{Binding Path=DataContext.ColumnsVisibilityList[3].IsVisible,
+                    Source={StaticResource ProxyUserControlContext}, Converter={StaticResource BoolToVis}}"
+                    Binding="{Binding Path=Project_Type, Converter={StaticResource CollToStr}}"
+                    ElementStyle="{StaticResource Wrapping_Centering_TextBlock}"
+                    Width="120"/>
+
+                <DataGridTextColumn
+                    x:Name="YearStartColumn"
+                    Header="Year Start"
+                    Visibility="{Binding Path=DataContext.ColumnsVisibilityList[4].IsVisible,
+                    Source={StaticResource ProxyUserControlContext}, Converter={StaticResource BoolToVis}}"
+                    Binding ="{Binding Path=Year_Start, StringFormat=dd.MM.yyyy}"
+                    Width="120"
+                    ElementStyle="{StaticResource Wrapping_Centering_TextBlock}"/>
+
+                <DataGridTextColumn
+                    x:Name="YearEndColumn"
+                    Header="Year End"
+                    Visibility="{Binding Path=DataContext.ColumnsVisibilityList[5].IsVisible,
+                    Source={StaticResource ProxyUserControlContext}, Converter={StaticResource BoolToVis}}"
+                    Binding ="{Binding Path=Year_End, StringFormat=dd.MM.yyyy}" 
+                    Width="120"
+                    ElementStyle="{StaticResource Wrapping_Centering_TextBlock}"/>
+
+                <DataGridTextColumn 
+                    x:Name="PriceColumn"
+                    Header="Price"
+                    Visibility="{Binding Path=DataContext.ColumnsVisibilityList[6].IsVisible,
+                    Source={StaticResource ProxyUserControlContext}, Converter={StaticResource BoolToVis}}"
+                    Binding ="{Binding Path=Price}" 
+                    Width="80"
+                    ElementStyle="{StaticResource Wrapping_Centering_TextBlock}"/>
+
+                <DataGridTextColumn 
+                    x:Name="DescriptionColumn"
+                    Header="Description"
+                    Visibility="{Binding Path=DataContext.ColumnsVisibilityList[7].IsVisible,
+                    Source={StaticResource ProxyUserControlContext}, Converter={StaticResource BoolToVis}}"
+                    Binding ="{Binding Path=Description}"
+                    ElementStyle="{StaticResource Wrapping_TextBlock}"
+                    Width="200"/>
+
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

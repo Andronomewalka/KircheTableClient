@@ -1,0 +1,409 @@
+﻿<UserControl x:Class="Kirche_Client.Views.EditTabView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:utility="clr-namespace:Kirche_Client.Utility"
+             xmlns:converters="clr-namespace:Kirche_Client.Converters"
+             xmlns:viewmodels="clr-namespace:Kirche_Client.ViewModels.EditTab"
+             xmlns:controls="http://metro.mahapps.com/winfx/xaml/controls"
+             xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+             mc:Ignorable="d">
+
+    <UserControl.Resources>
+
+        <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <converters:CollectionToStringConverter x:Key="CollToStr"/>
+        <converters:ToggleButtonToBackgroundConverter x:Key="ToggleToBackground"/>
+        <converters:IsCheckedToButtonContentConverter x:Key="CheckedToContent"/>
+        <converters:NullStringToIntConverter x:Key="NullStrToInt"/>
+
+        <Style x:Key="Wrapping_TextBlock" TargetType="{x:Type TextBlock}">
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <Style x:Key="Cell_Editing" TargetType="{x:Type TextBox}" BasedOn="{StaticResource MetroTextBox}">
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        </Style>
+
+        <Style x:Key="Wrapping_Centering_TextBlock" TargetType="{x:Type TextBlock}">
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="TextBlock.TextAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="Cell_Centering_Editing" TargetType="{x:Type TextBox}" BasedOn="{StaticResource MetroTextBox}">
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="GridHeader_Centering" TargetType="DataGridColumnHeader" BasedOn="{StaticResource MetroDataGridColumnHeader}">
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="10,0,10,0"/>
+        </Style>
+
+        <Style x:Key="GridCell_Centering" TargetType="DataGridCell" BasedOn="{StaticResource MetroDataGridCell}">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="White" />
+                    <Setter Property="Foreground" Value="Black" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="RowStyle" TargetType="DataGridRow" BasedOn="{StaticResource MetroDataGridRow}">
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="Foreground" Value="Black" />
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="Transparent"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ListBoxItemSelectOnMouseOver" TargetType="ListBoxItem" BasedOn="{StaticResource MetroListBoxItem}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border
+                            BorderThickness="{TemplateBinding Border.BorderThickness}"
+                            Padding="{TemplateBinding Control.Padding}"
+                            BorderBrush="{TemplateBinding Border.BorderBrush}"
+                            Background="{TemplateBinding Panel.Background}"
+                            SnapsToDevicePixels="True">
+                            <ContentPresenter
+                                Content="{TemplateBinding ContentControl.Content}"
+                                ContentTemplate="{TemplateBinding ContentControl.ContentTemplate}"
+                                HorizontalAlignment="{TemplateBinding Control.HorizontalContentAlignment}"
+                                VerticalAlignment="{TemplateBinding Control.VerticalContentAlignment}"
+                                SnapsToDevicePixels="{TemplateBinding UIElement.SnapsToDevicePixels}" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="IsSelected" Value="True"/>
+                </Trigger>
+                <Trigger Property="Validation.HasError" Value="true">
+                    <Setter Property="ToolTip"
+                            Value="{Binding RelativeSource={x:Static RelativeSource.Self},
+                            Path=(Validation.Errors).CurrentItem.ErrorContent}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+    </UserControl.Resources>
+    
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="Unloaded">
+            <i:InvokeCommandAction Command="{Binding Path=Editing.EditTabClosedCommand}"/>
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="0">
+            <ToggleButton 
+                Name="StartEditing"
+                Content="{Binding Path=IsChecked,
+                RelativeSource={RelativeSource self},
+                Converter={StaticResource CheckedToContent},
+                UpdateSourceTrigger=PropertyChanged}"
+                IsChecked="{Binding Path=StartCancel.StartEdititngToggled, Mode=TwoWay}"
+                IsEnabled="{Binding Path=IsCollectionValid, UpdateSourceTrigger=PropertyChanged}"
+                Margin="3"
+                Command="{Binding Path=StartCancel.SaveCommand}"
+                Style="{DynamicResource MetroFlatToggleButton}">
+            </ToggleButton>
+
+            <Button 
+                Name="Cancel"
+                Content="Cancel"
+                Margin="3"
+                Command="{Binding Path=StartCancel.CancelCommand}"
+                Style="{DynamicResource MetroFlatButton}">
+            </Button>
+        </StackPanel>
+
+        <DockPanel
+            Grid.Row="1">
+            <StackPanel
+                DockPanel.Dock="Left"
+                Orientation="Horizontal" >
+                <Button 
+                Name="UndoButton"
+                Margin="3"
+                Command="{Binding Path=Editing.UndoCommand}">
+                    <iconPacks:PackIconMaterial
+                    Width="20"
+                    Height="20"
+                    Kind="Undo"/>
+                </Button>
+
+                <Button 
+                Name="RedoButton"
+                Margin="3"
+                Command="{Binding Path=Editing.RedoCommand}">
+                    <iconPacks:PackIconMaterial
+                    Width="20"
+                    Height="20"
+                    Kind="Redo"/>
+                </Button>
+            </StackPanel>
+
+            <Button 
+                DockPanel.Dock="Right"
+                HorizontalAlignment="Right"
+                Name="Add"
+                Content="New Project"
+                Margin="3"
+                Command="{Binding Path=Editing.NewProjectCommand}"
+                IsEnabled="{Binding ElementName=StartEditing, Path=IsChecked}"
+                Style="{DynamicResource MetroFlatButton}"/>
+        </DockPanel>
+
+        <DataGrid 
+            Grid.Row="2"
+            AutoGenerateColumns="False"
+            FrozenColumnCount="1"
+            CanUserAddRows="false"
+            CanUserSortColumns="False"
+            MinRowHeight="60"
+            MinColumnWidth="60"
+            GridLinesVisibility="All"
+            Margin="0,5,0,5"
+            SelectionUnit="FullRow"
+            SelectionMode="Single"
+            ItemsSource="{Binding Path=CopyElemsView, UpdateSourceTrigger=PropertyChanged}"
+            ColumnHeaderStyle="{StaticResource GridHeader_Centering}"
+            CellStyle="{StaticResource GridCell_Centering}"
+            RowStyle="{StaticResource RowStyle}"
+            SelectedItem="{Binding Path=Editing.SelectedElem, Mode=OneWayToSource}"
+            CurrentColumn="{Binding Path=Editing.SelectedProperty, Mode=OneWayToSource}"
+            IsEnabled="{Binding ElementName=StartEditing, Path=IsChecked}">
+            <DataGrid.Columns>
+
+                <DataGridTextColumn 
+                    Header="Id"
+                    Binding ="{Binding Path=Id}"
+                    ElementStyle="{StaticResource Wrapping_Centering_TextBlock}"
+                    IsReadOnly="True"/>
+
+                <DataGridTextColumn 
+                    Header="Church District"
+                    Binding ="{Binding Path=Church_District}"
+                    ElementStyle="{StaticResource Wrapping_Centering_TextBlock}"
+                    Width="185"
+                    IsReadOnly="True"/>
+
+
+                <DataGridTemplateColumn
+                    Header="Church"
+                    Width="80"
+                    CellStyle="{StaticResource GridCell_Centering}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBox 
+                                Text="{Binding Path=Church,
+                                UpdateSourceTrigger=PropertyChanged}" 
+                                Style="{StaticResource Cell_Editing}"
+                                BorderThickness="0"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn 
+                    Header="Project Type"
+                    CellStyle="{StaticResource GridCell_Centering}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,5,0,5" VerticalAlignment="Center">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="auto"/>
+                                    <RowDefinition Height="30"/>
+                                </Grid.RowDefinitions>
+
+                                <ListBox
+                                    Grid.Row="0"
+                                    ItemsSource="{Binding Path=Project_Type, 
+                                    Mode=TwoWay, 
+                                    ValidatesOnDataErrors=True, 
+                                    UpdateSourceTrigger=PropertyChanged}"
+                                    ItemContainerStyle="{StaticResource ListBoxItemSelectOnMouseOver}"
+                                    SelectedItem="{Binding Path=DataContext.Editing.SelectedListItemElemProperty, 
+                                    RelativeSource={RelativeSource AncestorType=UserControl},
+                                    Mode=OneWayToSource,
+                                    UpdateSourceTrigger=PropertyChanged}"
+                                    Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <ComboBox
+                                                    Grid.Column="0"
+                                                    ItemsSource="{Binding Path=DataContext.ComboSource.ProjectTypeCombo, 
+                                                    RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    DisplayMemberPath="Name" 
+                                                    SelectedValuePath="Name"
+                                                    SelectedValue="{Binding Path=Name, Mode=TwoWay,
+                                                    UpdateSourceTrigger=PropertyChanged}"
+                                                    IsEditable="True"/>
+                                                <Button 
+                                                    Name="RemoveDistrictButton"
+                                                    Grid.Column="1"
+                                                    Margin="2,0,4,0"
+                                                    Command="{Binding Path=DataContext.Editing.RemoveComboItemCommand,
+                                                    RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                                    <iconPacks:PackIconMaterial
+                                                        Width="10"
+                                                        Height="10"
+                                                        Kind="Close"/>
+                                                </Button>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+
+                                <Button 
+                                    Grid.Row="1"
+                                    Command="{Binding Path=DataContext.Editing.AddComboItemCommand,
+                                    RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    Height="10"
+                                    Margin="5,0,4,0">
+                                    <iconPacks:Material Height="10" Kind="Plus"/>
+                                </Button>
+
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn
+                    Header="Year Start"
+                    CellStyle="{StaticResource GridCell_Centering}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <DatePicker 
+                                SelectedDate="{Binding Path=Year_Start, 
+                                ValidatesOnDataErrors=True,
+                                NotifyOnValidationError=True,
+                                StringFormat=dd.MM.yyyy,
+                                Mode=TwoWay,
+                                UpdateSourceTrigger=PropertyChanged}"
+                                BorderThickness="0"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                controls:TextBoxHelper.Watermark="{x:Null}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn
+                    Header="Year End"
+                    CellStyle="{StaticResource GridCell_Centering}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <DatePicker 
+                                SelectedDate="{Binding Path=Year_End, 
+                                ValidatesOnDataErrors=True,
+                                NotifyOnValidationError=True,
+                                StringFormat=dd.MM.yyyy,
+                                Mode=TwoWay,
+                                UpdateSourceTrigger=PropertyChanged}"
+                                BorderThickness="0"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                controls:TextBoxHelper.Watermark="{x:Null}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+
+                <DataGridTemplateColumn
+                    Header="Price"
+                    Width="80"
+                    CellStyle="{StaticResource GridCell_Centering}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBox 
+                                Text="{Binding Path=Price,
+                                ValidatesOnDataErrors=True,
+                                UpdateSourceTrigger=PropertyChanged,
+                                Converter={StaticResource NullStrToInt}}" 
+                                Style="{StaticResource Cell_Editing}"
+                                BorderThickness="0"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+
+                <DataGridTemplateColumn
+                    Header="Description"
+                    Width="200"
+                    CellStyle="{StaticResource GridCell_Centering}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBox 
+                                Text="{Binding Path=Description,
+                                UpdateSourceTrigger=PropertyChanged}" 
+                                Style="{StaticResource Cell_Editing}"
+                                BorderThickness="0"
+                                HorizontalContentAlignment="Left"
+                                VerticalContentAlignment="Center"
+                                AcceptsReturn="True"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn
+                    Header="Delete"
+                    Width="70"
+                    CellStyle="{StaticResource GridCell_Centering}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button 
+                                Name="RemoveRowButton"
+                                Margin="2,0,0,0"
+                                Command="{Binding Path=DataContext.Editing.RemoveRowCommand,
+                                RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                MinHeight="30"
+                                MinWidth="25">
+                                <iconPacks:PackIconMaterial
+                                    Width="10"
+                                    Height="10"
+                                    Kind="Close"/>
+                            </Button>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>
