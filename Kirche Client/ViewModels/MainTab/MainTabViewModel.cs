@@ -47,18 +47,29 @@ namespace Kirche_Client.ViewModels.MainTab
             set => SetProperty(ref searchButtonChecked, value);
         }
         
-
         public FilterViewModel Filter { get; private set; }
 
         public MainTabViewModel()
         {
             ElemsView = MainModel.ElemsView;
             ElemsView.SortDescriptions.Add(new SortDescription("Church_District", ListSortDirection.Ascending));
+            MainModel.ModelChanged += MainModel_ModelChanged;
             ComboSource = MainModel.ComboSource;
             Filter = new FilterViewModel(ElemsView);
             ColumnsVisibilityList = DefineColumnsList();
             searchButtonCommand = new DelegateCommand(SearchButtonCommandExecute, SearchButtonCommandCanExecute);
             colVisibilityItemCommand = new DelegateCommand(ColVisibilityItemCommandExecute, ColVisibilityItemCommandCanExecute);
+        }
+
+        private void MainModel_ModelChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "ElemsView")
+            {
+                ElemsView = MainModel.ElemsView;
+                Filter.ParentCollection = ElemsView;
+            }
+            else if (e.PropertyName == "ComboSource")
+                ComboSource = MainModel.ComboSource;
         }
 
         private ObservableCollection<ColumnVisibility> DefineColumnsList()

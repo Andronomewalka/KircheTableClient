@@ -1,8 +1,10 @@
 ﻿using Kirche_Client.Utility;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
 using System.Windows.Data;
@@ -13,11 +15,21 @@ namespace Kirche_Client.Models
     class MainModel
     {
         public static Client Client { get; private set; }
-        public static ComboSource ComboSource { get; private set; }
 
-        public static ListCollectionView ElemsView { get; private set; }
+        private static ComboSource comboSource;
+        public static ComboSource ComboSource
+        {
+            get => comboSource;
+            private set => SetProperty(ref comboSource, value);
+        }
 
-        public static event CustomEvent ModelChanged;
+        private static ListCollectionView elemsView;
+        public static ListCollectionView ElemsView
+        {
+            get => elemsView;
+            private set => SetProperty(ref elemsView, value);
+        }
+
         static MainModel()
         {
             Client = new Client();
@@ -37,7 +49,6 @@ namespace Kirche_Client.Models
         public static void SetComboSource()
         {
             ComboSource = new ComboSource(Client.GetCategoriesActionRequest());
-            ModelChanged?.Invoke();
         }
 
         private static List<KircheElem> GetLastCopy()
@@ -61,6 +72,11 @@ namespace Kirche_Client.Models
             }
         }
 
-        public delegate void CustomEvent();
+        public static event PropertyChangedEventHandler ModelChanged;
+        private static void SetProperty<T>(ref T field, T newValue, [CallerMemberName]string propertyName = null)
+        {
+            field = newValue;
+            ModelChanged?.Invoke(null, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }

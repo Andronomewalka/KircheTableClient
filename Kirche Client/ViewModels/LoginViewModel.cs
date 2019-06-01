@@ -67,10 +67,16 @@ namespace Kirche_Client.ViewModels
             loginTryCommand = new DelegateCommand(LoginTryCommandExecute, LoginTryCommandCanExecute);
             offlineModeCommand = new DelegateCommand(OfflineModeCommandExecute, OfflineModeCommandCanExecute);
             MainModel.Client.PropertyChanged += Client_PropertyChanged;
-            MainModel.ModelChanged += MainModel_ModelChanged;
+            MainModel.ModelChanged += MainModel_ModelChanged1;
             ComboSource = MainModel.ComboSource;
             SelectedDistrict = MainModel.Client.District;
             Key = MainModel.Client.Key;
+        }
+
+        private void MainModel_ModelChanged1(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "ComboSource")
+                ComboSource = MainModel.ComboSource;
         }
 
         private void Client_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -83,11 +89,6 @@ namespace Kirche_Client.ViewModels
 
             Application.Current.Dispatcher
                 .BeginInvoke(new Action(loginTryCommand.InvokeCanExecuteChanged));
-        }
-
-        private void MainModel_ModelChanged()
-        {
-            ComboSource = MainModel.ComboSource;
         }
 
         #region Commands

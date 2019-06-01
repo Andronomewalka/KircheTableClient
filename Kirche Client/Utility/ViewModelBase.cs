@@ -28,5 +28,4 @@ namespace Kirche_Client.Utility
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
-
 }

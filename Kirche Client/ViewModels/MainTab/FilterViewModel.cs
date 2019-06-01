@@ -11,14 +11,23 @@ namespace Kirche_Client.ViewModels.MainTab
 {
     public class FilterViewModel : ViewModelBase
     {
-        private ListCollectionView collection;
+        private ListCollectionView parentCollection;
+        public ListCollectionView ParentCollection
+        {
+            private get => parentCollection;
+            set
+            {
+                parentCollection = value;
+                parentCollection.Filter += FilterMethod;
+            }
+        }
         private KircheElem filterElem;
 
         public FilterViewModel(ListCollectionView collection)
         {
             filterElem = new KircheElem();
-            this.collection = collection;
-            this.collection.Filter += FilterMethod;
+            ParentCollection = collection;
+            ParentCollection.Filter += FilterMethod;
         }
 
         public void ResetFilter()
@@ -222,9 +231,8 @@ namespace Kirche_Client.ViewModels.MainTab
                     break;
             }
 
-            collection.Refresh();
+            ParentCollection.Refresh();
         }
-
 
         private bool FilterMethod(object sender)
         {

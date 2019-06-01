@@ -148,6 +148,8 @@ namespace Kirche_Client.ViewModels
                 await Task.Run(() =>
                 MainModel.Client.LoginActionRequest(MainModel.Client.District, MainModel.Client.Key));
                 await Task.Run(() => MainModel.SetElemsViewFromServer());
+                //await Application.Current.Dispatcher.BeginInvoke(
+                //    new Action(MainModel.ElemsView.Refresh));
             }
         }
         #endregion
