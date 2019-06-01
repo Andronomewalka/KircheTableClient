@@ -356,10 +356,10 @@ namespace Kirche_Client.Models
                 for (int connectionTry = 0; connectionTry < 20; connectionTry++)
                 {
                     connect = InternalTryToConnect();
-                    if (!connect)
-                        ConnectionState = ClientState.Reconnecting;
-                    else if (exitConnect || connect)
+                    if (exitConnect || connect)
                         break;
+                    else if (!connect)
+                        ConnectionState = ClientState.Reconnecting;
                 }
                 if (connect)
                 {
