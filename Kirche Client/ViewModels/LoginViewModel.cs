@@ -62,7 +62,6 @@ namespace Kirche_Client.ViewModels
         }
 
         bool loginOperation = false;
-        public static event EventHandler<LoginEventArgs> LoggedInNotification;
         public LoginViewModel()
         {
             loginTryCommand = new DelegateCommand(LoginTryCommandExecute, LoginTryCommandCanExecute);
@@ -76,7 +75,7 @@ namespace Kirche_Client.ViewModels
 
         private void Client_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (MainModel.Client.ConnectionState == ConnectionState.GetData)
+            if (MainModel.Client.ConnectionState == ClientState.GettingAll)
             {
                 LoginPanelEnabled = false;
                 ProgressBarState = true;
@@ -101,7 +100,7 @@ namespace Kirche_Client.ViewModels
         {
             return SelectedDistrict != null
                 && !string.IsNullOrWhiteSpace(key)
-                && MainModel.Client.ConnectionState == ConnectionState.Connected;
+                && MainModel.Client.ConnectionState == ClientState.Connected;
         }
 
         private async void LoginTryCommandExecute(object obj)
@@ -109,10 +108,8 @@ namespace Kirche_Client.ViewModels
             loginOperation = true;
 
             if (await Task.Run(() => MainModel.Client.LoginActionRequest(selectedDistrict, Key)))
-            {
                 await Task.Run(() => MainModel.SetElemsViewFromServer());
-                LoggedInNotification?.Invoke(this, new LoginEventArgs(LoginMode.online));
-            }
+
             else
                 LaunchValidation("Key");
 
@@ -131,12 +128,14 @@ namespace Kirche_Client.ViewModels
 
         private async void OfflineModeCommandExecute(object obj)
         {
-            await Task.Run(() => MainModel.Client.LogoutActionRequest());
+            MainModel.Client.ConnectionState = ClientState.GettingAll;
+
             await Task.Run(() =>
                 Application.Current.Dispatcher.Invoke(() =>
-                    MainModel.SetElemsViewFromLastCopy()));
+                MainModel.SetElemsViewFromLastCopy()));
 
-            LoggedInNotification?.Invoke(this, new LoginEventArgs(LoginMode.offline));
+            MainModel.Client.ConnectionState = ClientState.GetAllOffline;
+            await Task.Run(() => MainModel.Client.LogoutActionRequest());
         }
         #endregion
 
@@ -152,16 +151,5 @@ namespace Kirche_Client.ViewModels
             }
         }
         #endregion
-    }
-
-    public enum LoginMode {online, offline };
-    public class LoginEventArgs : EventArgs
-    {
-        public LoginMode Mode { get; }
-
-        public LoginEventArgs(LoginMode Mode)
-        {
-            this.Mode = Mode;
-        }
     }
 }

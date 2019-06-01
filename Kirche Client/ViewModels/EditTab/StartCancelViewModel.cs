@@ -42,7 +42,7 @@ namespace Kirche_Client.ViewModels.EditTab
                 AccentModel.SetMainAccent();
         }
 
-        ConnectionState connectionState;
+        ClientState connectionState;
         List<KircheElem> updatedElems;
         Dictionary<int, string> deletedElems;
 
@@ -65,8 +65,8 @@ namespace Kirche_Client.ViewModels.EditTab
         private void Client_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             connectionState = MainModel.Client.ConnectionState;
-            if (connectionState == ConnectionState.Connected
-                || connectionState == ConnectionState.Disconnected)
+            if (connectionState == ClientState.Connected
+                || connectionState == ClientState.Disconnected)
                 Application.Current.Dispatcher
                     .BeginInvoke(new Action(saveCommand.InvokeCanExecuteChanged));
         }
@@ -97,7 +97,7 @@ namespace Kirche_Client.ViewModels.EditTab
 
         private bool SaveCommandCanExecute(object arg)
         {
-            return connectionState != ConnectionState.Connected ? false : true;
+            return connectionState != ClientState.Connected ? false : true;
         }
 
         enum OperationResult { Ok, Bad, NoElems }

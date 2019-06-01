@@ -14,14 +14,15 @@ using TransitPackage;
 
 namespace Kirche_Client.Models
 {
-    public enum ConnectionState
+    public enum ClientState
     {
-        Connecting, Connected, Reconnecting, Disconnected, GetData
+        Connecting, Connected, Reconnecting, Disconnected,
+        GettingAll, GetAll, GetAllOffline
     }
     public class Client : ViewModelBase
     {
-        private ConnectionState connectionState;
-        public ConnectionState ConnectionState
+        private ClientState connectionState;
+        public ClientState ConnectionState
         {
             get => connectionState;
             set => SetProperty(ref connectionState, value);
@@ -29,8 +30,9 @@ namespace Kirche_Client.Models
 
         public string District { get; private set; }
         public string Key { get; private set; }
-       // public SemaphoreSlim MainCollectionEditSemaphore { get; private set; }
-       // public event Action SameDistrictUpdateReceive;
+        //public SemaphoreSlim MainCollectionSemaphore { get; private set; }
+        // public event Action SameDistrictUpdateReceive;
+        public event EventHandler<LoginEventArgs> LoggedInStatusChanged;
         TcpClient tcpClient;
         NetworkStream stream;
         Message message;
@@ -43,8 +45,8 @@ namespace Kirche_Client.Models
         {
             District = null;
             NetworkStreamMutex = new Mutex();
-          //  MainCollectionEditSemaphore = new SemaphoreSlim(1);
-            ConnectionState = ConnectionState.Disconnected;
+            //MainCollectionSemaphore = new SemaphoreSlim(1);
+            ConnectionState = ClientState.Disconnected;
             connectionCheckTimer = new DispatcherTimer();
             connectionCheckTimer.Tick += ConnectionCheckActionRequest;
             connectionCheckTimer.Interval = new TimeSpan(0, 0, 5);
@@ -86,11 +88,11 @@ namespace Kirche_Client.Models
         private async void DeleteReceiveAction()
         {
             SystemMessageModel.ExternalMessage = "External update received";
-           // SystemMessageModel.ExternalMessage =
-           //     "External update received\n" +
-           //     "(Projects will be updated after editing done)";
+            // SystemMessageModel.ExternalMessage =
+            //     "External update received\n" +
+            //     "(Projects will be updated after editing done)";
 
-           // bool SameDistrictElemsUpdated = false;
+            // bool SameDistrictElemsUpdated = false;
             try
             {
                 byte[] forDeleteBytes = message.Read();
@@ -121,8 +123,8 @@ namespace Kirche_Client.Models
                     await Application.Current.Dispatcher
                         .BeginInvoke(new Action<object>(MainModel.ElemsView.Remove), cur);
 
-                   // if (cur.Church_District == District)
-                   //     SameDistrictElemsUpdated = true;
+                    // if (cur.Church_District == District)
+                    //     SameDistrictElemsUpdated = true;
                 }
             }
             catch (Exception e)
@@ -130,8 +132,8 @@ namespace Kirche_Client.Models
                 Console.WriteLine(e.Message);
             }
 
-           // if (SameDistrictElemsUpdated)
-           //     SameDistrictUpdateReceive?.Invoke();
+            // if (SameDistrictElemsUpdated)
+            //     SameDistrictUpdateReceive?.Invoke();
         }
 
         private async void UpdateReceiveAction()
@@ -149,7 +151,7 @@ namespace Kirche_Client.Models
                 List<KircheElem> updatedElems = KircheElem.DeserializationList(data);
                 Console.WriteLine("Update recived");
 
-               // await MainCollectionEditSemaphore.WaitAsync();
+                // await MainCollectionEditSemaphore.WaitAsync();
 
                 foreach (var item in updatedElems)
                 {
@@ -192,8 +194,8 @@ namespace Kirche_Client.Models
                 Console.WriteLine(e.Message);
             }
 
-           // if (SameDistrictElemsUpdated)
-           //     SameDistrictUpdateReceive?.Invoke();
+            // if (SameDistrictElemsUpdated)
+            //     SameDistrictUpdateReceive?.Invoke();
         }
 
         public bool DeleteSendActionRequest(Dictionary<int, string> forDelete)
@@ -261,8 +263,7 @@ namespace Kirche_Client.Models
         public List<KircheElem> GetAllActionRequest()
         {
             NetworkStreamMutex.WaitOne();
-
-            ConnectionState = ConnectionState.GetData;
+            ConnectionState = ClientState.GettingAll;
 
             List<KircheElem> res = new List<KircheElem>();
             try
@@ -279,9 +280,10 @@ namespace Kirche_Client.Models
                 Console.WriteLine(e.Message);
             }
 
-            ConnectionState = ConnectionState.Connected;
-
+            ConnectionState = ClientState.GetAll;
+            ConnectionState = ClientState.Connected;
             NetworkStreamMutex.ReleaseMutex();
+
             return res;
         }
 
@@ -331,58 +333,83 @@ namespace Kirche_Client.Models
 
 
         private bool inConnect;
+        private bool exitConnect;
         public bool Connect()
         {
-            if (!inConnect)
-                return TryToConnect();
+            NetworkStreamMutex.WaitOne();
+            bool res = false;
 
-            return false;
+            if (!inConnect)
+                res = TryToConnect();
+
+            NetworkStreamMutex.ReleaseMutex();
+            return res;
         }
-        private bool TryToConnect(int connectionTry = 0)
+        private bool TryToConnect()
         {
             inConnect = true;
-
             try
             {
-                if (connectionTry == 0)
-                    ConnectionState = ConnectionState.Connecting;
+                ConnectionState = ClientState.Connecting;
+
+                bool connect = false;
+                for (int connectionTry = 0; connectionTry < 20; connectionTry++)
+                {
+                    connect = InternalTryToConnect();
+                    if (!connect)
+                        ConnectionState = ClientState.Reconnecting;
+                    else if (exitConnect || connect)
+                        break;
+                }
+                if (connect)
+                {
+                    tcpClient.ReceiveTimeout = 10000;
+                    tcpClient.SendTimeout = 10000;
+                    stream = tcpClient.GetStream();
+                    message = new Message(stream);
+                    streamIsOpen = true;
+                    connectionCheckTimer.Start();
+                    StartListening();
+
+                    ConnectionState = ClientState.Connected;
+
+                    inConnect = false;
+                    exitConnect = false;
+                    return true;
+                }
                 else
-                    ConnectionState = ConnectionState.Reconnecting;
-
-                tcpClient = new TcpClient();
-                tcpClient.Connect("178.251.104.48", 1815);
-                tcpClient.ReceiveTimeout = 10000;
-                tcpClient.SendTimeout = 10000;
-                stream = tcpClient.GetStream();
-                message = new Message(stream);
-                streamIsOpen = true;
-                connectionCheckTimer.Start();
-                StartListening();
-
-                ConnectionState = ConnectionState.Connected;
-
-                inConnect = false;
-                return true;
-
+                    ConnectionState = ClientState.Disconnected;
             }
             catch (Exception e)
             {
-                if (connectionTry < 3)
-                {
-                    connectionTry++;
-                    Console.WriteLine(e.Message);
-                    TryToConnect(connectionTry);
-                }
-                else
-                {
-                    connectionTry = 0;
-                    Disconnect();
-                }
+                Console.WriteLine("Connection Exception");
             }
 
-            //NetworkStreamMutex.ReleaseMutex();
+            exitConnect = false;
             inConnect = false;
             return false;
+        }
+
+        private bool InternalTryToConnect()
+        {
+            tcpClient = new TcpClient();
+            IAsyncResult ar = tcpClient.BeginConnect("178.251.104.48", 1815, null, null);
+            WaitHandle wh = ar.AsyncWaitHandle;
+            try
+            {
+                if (!ar.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(1), false))
+                {
+                    tcpClient.Close();
+                    return false;
+                }
+
+                tcpClient.EndConnect(ar);
+                return true;
+            }
+            finally
+            {
+                wh.Close();
+            }
         }
 
         public bool LoginActionRequest(string district, string key)
@@ -408,6 +435,7 @@ namespace Kirche_Client.Models
                 {
                     District = district;
                     Key = key;
+                    LoggedInStatusChanged?.Invoke(this, new LoginEventArgs(LoginMode.LoggedIn));
                 }
 
             }
@@ -423,9 +451,9 @@ namespace Kirche_Client.Models
 
         private void Disconnect()
         {
+            ConnectionState = ClientState.Disconnected;
             if (tcpClient != null)
             {
-                ConnectionState = ConnectionState.Disconnected;
                 connectionCheckTimer.Stop();
                 tcpClient.Close();
                 tcpClient = null;
@@ -435,6 +463,7 @@ namespace Kirche_Client.Models
 
         public void LogoutActionRequest()
         {
+            exitConnect = true;
             NetworkStreamMutex.WaitOne();
 
             try
@@ -443,6 +472,7 @@ namespace Kirche_Client.Models
                 {
                     message.WriteRequest(ActionEnum.logout_receive);
                     Disconnect();
+                    LoggedInStatusChanged?.Invoke(this, new LoginEventArgs(LoginMode.LoggedOut));
                 }
             }
             catch (Exception e)
@@ -450,7 +480,19 @@ namespace Kirche_Client.Models
                 Console.WriteLine(e.Message);
             }
 
+            exitConnect = false;
             NetworkStreamMutex.ReleaseMutex();
+        }
+    }
+
+    public enum LoginMode { LoggedIn, LoggedOut, Offline };
+    public class LoginEventArgs : EventArgs
+    {
+        public LoginMode Mode { get; }
+
+        public LoginEventArgs(LoginMode Mode)
+        {
+            this.Mode = Mode;
         }
     }
 }

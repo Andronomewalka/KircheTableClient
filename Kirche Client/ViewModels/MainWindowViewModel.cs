@@ -17,14 +17,16 @@ namespace Kirche_Client.ViewModels
             set => SetProperty(ref title, value);
         }
 
-        private bool loggedIn = false;
-        public bool LoggedIn
+        private LoginMode loginMode = LoginMode.LoggedOut;
+        public LoginMode LoginMode
         {
-            get => loggedIn;
+            get => loginMode;
             set
             {
-                SetProperty(ref loggedIn, value);
-                reLoginCommand.InvokeCanExecuteChanged();
+                SetProperty(ref loginMode, value);
+                TitleChange();
+                Application.Current.Dispatcher
+               .BeginInvoke(new Action(reLoginCommand.InvokeCanExecuteChanged));
             }
         }
 
@@ -42,48 +44,70 @@ namespace Kirche_Client.ViewModels
             reLoginCommand = new DelegateCommand(ReLoginCommandExecute, ReLoginCommandCanExecute);
             reconnectCommand = new DelegateCommand(ReconnectCommandExecute, ReconnectCommandCanExecute);
             MainModel.Client.PropertyChanged += Client_PropertyChanged;
-            LoginViewModel.LoggedInNotification += LoginViewModel_LoggedInNotification;
+            MainModel.Client.LoggedInStatusChanged += Client_LoggedInStatusChanged;
             Connect();
         }
 
-        private async void Connect()
+        private void TitleChange()
         {
-            await Task.Run(() => MainModel.Client.Connect());
-            await Task.Run(() => MainModel.SetComboSource());
+            if (loginMode == LoginMode.LoggedIn)
+                Title = "NordKirche - " + MainModel.Client.District;
+            else if (loginMode == LoginMode.Offline)
+                Title = "NordKirche - Offline";
+            else
+                Title = "NordKirche";
         }
 
-        private void LoginViewModel_LoggedInNotification(object sender, LoginEventArgs e)
+        private void Client_LoggedInStatusChanged(object sender, LoginEventArgs e)
         {
-            LoggedIn = true;
-            if (e.Mode == LoginMode.online)
-                Title = "NordKirche - " + MainModel.Client.District;
-            else
-                Title = "NordKirche - Offline";
+            //LoginMode = e.Mode;
+            //if (e.Mode == LoginMode.LoggedIn)
+            //    Title = "NordKirche - " + MainModel.Client.District;
+            //else
+            //    Title = "NordKirche - Offline";
+        }
+
+        private async Task<bool> Connect()
+        {
+            bool res = await Task.Run(() => MainModel.Client.Connect());
+            await Task.Run(() => MainModel.SetComboSource());
+            return res;
         }
 
         private void Client_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            ConnectionState cur = MainModel.Client.ConnectionState;
+            ClientState cur = MainModel.Client.ConnectionState;
 
-            if (cur == Models.ConnectionState.Connecting)
+            if (cur == Models.ClientState.Connecting)
+            {
                 ConnectionState = "Connecting";
+                AccentModel.MainColor = "Steel";
+                AccentModel.SetMainAccent();
+            }
 
-            else if (cur == Models.ConnectionState.Reconnecting)
+            else if (cur == Models.ClientState.Reconnecting)
                 ConnectionState = "Reconnecting";
 
-            else if (cur == Models.ConnectionState.Connected)
+            else if (cur == Models.ClientState.Connected)
             {
                 ConnectionState = "Connected";
                 AccentModel.MainColor = "Blue";
                 AccentModel.SetMainAccent();
             }
 
-            else if (cur == Models.ConnectionState.Disconnected)
+            else if (cur == Models.ClientState.Disconnected)
             {
                 ConnectionState = "Disconnected";
+               // LoginMode = LoginMode.LoggedOut;
                 AccentModel.MainColor = "Steel";
                 AccentModel.SetMainAccent();
             }
+
+            else if (cur == Models.ClientState.GetAll)
+                LoginMode = LoginMode.LoggedIn;
+
+            else if (cur == ClientState.GetAllOffline)
+                LoginMode = LoginMode.Offline;
 
             Application.Current.Dispatcher
                 .BeginInvoke(new Action(reconnectCommand.InvokeCanExecuteChanged));
@@ -97,14 +121,14 @@ namespace Kirche_Client.ViewModels
 
         private bool ReLoginCommandCanExecute(object arg)
         {
-            return LoggedIn;
+            return LoginMode == LoginMode.LoggedIn || LoginMode == LoginMode.Offline;
         }
 
         private async void ReLoginCommandExecute(object obj)
         {
             await Task.Run(() => MainModel.Client.LogoutActionRequest());
+            LoginMode = LoginMode.LoggedOut;
             await Task.Run(() => MainModel.Client.Connect());
-            LoggedIn = false;
         }
         #endregion
 
@@ -119,10 +143,12 @@ namespace Kirche_Client.ViewModels
 
         private async void ReconnectCommandExecute(object obj)
         {
-            Connect();
-            if (MainModel.Client.District != null)
+            if (await Connect() && MainModel.Client.District != null)
+            {
                 await Task.Run(() =>
                 MainModel.Client.LoginActionRequest(MainModel.Client.District, MainModel.Client.Key));
+                await Task.Run(() => MainModel.SetElemsViewFromServer());
+            }
         }
         #endregion
 

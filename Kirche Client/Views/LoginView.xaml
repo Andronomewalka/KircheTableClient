@@ -48,9 +48,9 @@
             Grid.Row="0"
             Content="Login District"
             FontSize="26"
-            Margin="0,100,0,50"
+            Margin="0,100,0,0"
             HorizontalAlignment="Center" 
-            VerticalAlignment="Top" RenderTransformOrigin="0.516,1.167"/>
+            VerticalAlignment="Top"/>
 
         <Grid         
             Grid.Row="1"

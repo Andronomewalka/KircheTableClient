@@ -129,7 +129,7 @@
     <Frame
         Name="FrameControl"
         NavigationUIVisibility="Hidden"
-        Content="{Binding Path=LoggedIn, 
+        Content="{Binding Path=LoginMode, 
         Converter={StaticResource LoginToPage}, 
         Mode=TwoWay}"/>
 

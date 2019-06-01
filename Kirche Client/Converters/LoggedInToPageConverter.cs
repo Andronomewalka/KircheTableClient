@@ -1,4 +1,5 @@
-﻿using Kirche_Client.Views;
+﻿using Kirche_Client.Models;
+using Kirche_Client.Views;
 using System;
 using System.Globalization;
 using System.Windows;
@@ -10,7 +11,8 @@ namespace Kirche_Client.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if ((bool)value)
+            if ((LoginMode)value == LoginMode.LoggedIn 
+                || (LoginMode)value == LoginMode.Offline)
                 return new TabControlView();
             else
                 return new LoginView();
