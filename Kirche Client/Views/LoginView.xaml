@@ -3,12 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:Kirche_Client.Views"
-             xmlns:dialogs="clr-namespace:MahApps.Metro.Controls.Dialogs;assembly=MahApps.Metro"
-             xmlns:viewmodels="clr-namespace:Kirche_Client.ViewModels"
              xmlns:controls="http://metro.mahapps.com/winfx/xaml/controls"
-             xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
-             xmlns:utility="clr-namespace:Kirche_Client.Utility"
              xmlns:converters="clr-namespace:Kirche_Client.Converters"
              mc:Ignorable="d"
              Name ="LoginViewPage">
@@ -16,23 +11,6 @@
     <Page.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <converters:BoolToVisibilityConverter x:Key="BoolToVisH"/>
-
-        <Style x:Key="TextBlockOpacityAnimation" TargetType="TextBlock" BasedOn="{StaticResource MetroTextBlock}">
-            <Style.Triggers>
-                <Trigger Property="Visibility" Value="Visible">
-                    <Trigger.EnterActions>
-                        <BeginStoryboard>
-                            <Storyboard>
-                                <DoubleAnimation 
-                                    Storyboard.TargetProperty="Opacity"
-                                    From="0"
-                                    To="1" Duration="0:0:1"/>
-                            </Storyboard>
-                        </BeginStoryboard>
-                    </Trigger.EnterActions>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
     </Page.Resources>
 
     <Grid
@@ -109,7 +87,10 @@
             <TextBlock 
                 Text="Getting Data..."
                 FontSize="14"
-                HorizontalAlignment="Center"/>
+                HorizontalAlignment="Center"
+                Visibility="{Binding Path=Visibility,
+                RelativeSource={RelativeSource AncestorType=StackPanel}}"
+                Style="{StaticResource GettingData_OpacityAnimation}"/>
         </StackPanel>
 
     </Grid>

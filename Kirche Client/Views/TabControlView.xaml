@@ -4,10 +4,6 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:views="clr-namespace:Kirche_Client.Views"
-      xmlns:viewmodels="clr-namespace:Kirche_Client.ViewModels"
-      xmlns:controls="http://metro.mahapps.com/winfx/xaml/controls"
-      xmlns:utility="clr-namespace:Kirche_Client.Utility"
-      xmlns:converters="clr-namespace:Kirche_Client.Converters"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800">
 

@@ -4,105 +4,17 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:utility="clr-namespace:Kirche_Client.Utility"
              xmlns:converters="clr-namespace:Kirche_Client.Converters"
-             xmlns:viewmodels="clr-namespace:Kirche_Client.ViewModels.EditTab"
              xmlns:controls="http://metro.mahapps.com/winfx/xaml/controls"
              xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
              mc:Ignorable="d">
 
     <UserControl.Resources>
-
         <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
         <converters:CollectionToStringConverter x:Key="CollToStr"/>
         <converters:ToggleButtonToBackgroundConverter x:Key="ToggleToBackground"/>
         <converters:IsCheckedToButtonContentConverter x:Key="CheckedToContent"/>
         <converters:NullStringToIntConverter x:Key="NullStrToInt"/>
-
-        <Style x:Key="Wrapping_TextBlock" TargetType="{x:Type TextBlock}">
-            <Setter Property="TextWrapping" Value="Wrap"/>
-        </Style>
-
-        <Style x:Key="Cell_Editing" TargetType="{x:Type TextBox}" BasedOn="{StaticResource MetroTextBox}">
-            <Setter Property="TextWrapping" Value="Wrap"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-        </Style>
-
-        <Style x:Key="Wrapping_Centering_TextBlock" TargetType="{x:Type TextBlock}">
-            <Setter Property="TextWrapping" Value="Wrap"/>
-            <Setter Property="TextBlock.TextAlignment" Value="Center"/>
-            <Setter Property="HorizontalAlignment" Value="Center"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-        </Style>
-
-        <Style x:Key="Cell_Centering_Editing" TargetType="{x:Type TextBox}" BasedOn="{StaticResource MetroTextBox}">
-            <Setter Property="TextWrapping" Value="Wrap"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-        </Style>
-
-        <Style x:Key="GridHeader_Centering" TargetType="DataGridColumnHeader" BasedOn="{StaticResource MetroDataGridColumnHeader}">
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="Padding" Value="10,0,10,0"/>
-        </Style>
-
-        <Style x:Key="GridCell_Centering" TargetType="DataGridCell" BasedOn="{StaticResource MetroDataGridCell}">
-            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
-            <Style.Triggers>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="White" />
-                    <Setter Property="Foreground" Value="Black" />
-                </Trigger>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" />
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style x:Key="RowStyle" TargetType="DataGridRow" BasedOn="{StaticResource MetroDataGridRow}">
-            <Style.Triggers>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="Transparent" />
-                    <Setter Property="Foreground" Value="Black" />
-                </Trigger>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="Transparent"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style x:Key="ListBoxItemSelectOnMouseOver" TargetType="ListBoxItem" BasedOn="{StaticResource MetroListBoxItem}">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ListBoxItem">
-                        <Border
-                            BorderThickness="{TemplateBinding Border.BorderThickness}"
-                            Padding="{TemplateBinding Control.Padding}"
-                            BorderBrush="{TemplateBinding Border.BorderBrush}"
-                            Background="{TemplateBinding Panel.Background}"
-                            SnapsToDevicePixels="True">
-                            <ContentPresenter
-                                Content="{TemplateBinding ContentControl.Content}"
-                                ContentTemplate="{TemplateBinding ContentControl.ContentTemplate}"
-                                HorizontalAlignment="{TemplateBinding Control.HorizontalContentAlignment}"
-                                VerticalAlignment="{TemplateBinding Control.VerticalContentAlignment}"
-                                SnapsToDevicePixels="{TemplateBinding UIElement.SnapsToDevicePixels}" />
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="IsSelected" Value="True"/>
-                </Trigger>
-                <Trigger Property="Validation.HasError" Value="true">
-                    <Setter Property="ToolTip"
-                            Value="{Binding RelativeSource={x:Static RelativeSource.Self},
-                            Path=(Validation.Errors).CurrentItem.ErrorContent}"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-        
     </UserControl.Resources>
     
     <i:Interaction.Triggers>
@@ -191,9 +103,9 @@
             SelectionUnit="FullRow"
             SelectionMode="Single"
             ItemsSource="{Binding Path=CopyElemsView, UpdateSourceTrigger=PropertyChanged}"
-            ColumnHeaderStyle="{StaticResource GridHeader_Centering}"
-            CellStyle="{StaticResource GridCell_Centering}"
-            RowStyle="{StaticResource RowStyle}"
+            ColumnHeaderStyle="{StaticResource DataGridHeader_Centering_Edit}"
+            CellStyle="{StaticResource DataGridCell_Edit}"
+            RowStyle="{StaticResource RowStyle_Edit}"
             SelectedItem="{Binding Path=Editing.SelectedElem, Mode=OneWayToSource}"
             CurrentColumn="{Binding Path=Editing.SelectedProperty, Mode=OneWayToSource}"
             IsEnabled="{Binding ElementName=StartEditing, Path=IsChecked}">
@@ -202,21 +114,20 @@
                 <DataGridTextColumn 
                     Header="Id"
                     Binding ="{Binding Path=Id}"
-                    ElementStyle="{StaticResource Wrapping_Centering_TextBlock}"
+                    ElementStyle="{StaticResource Wrapping_Centering_TextBlock_Edit}"
                     IsReadOnly="True"/>
 
                 <DataGridTextColumn 
                     Header="Church District"
                     Binding ="{Binding Path=Church_District}"
-                    ElementStyle="{StaticResource Wrapping_Centering_TextBlock}"
+                    ElementStyle="{StaticResource Wrapping_Centering_TextBlock_Edit}"
                     Width="185"
                     IsReadOnly="True"/>
 
 
                 <DataGridTemplateColumn
                     Header="Church"
-                    Width="80"
-                    CellStyle="{StaticResource GridCell_Centering}">
+                    Width="80">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBox 
@@ -231,8 +142,7 @@
                 </DataGridTemplateColumn>
 
                 <DataGridTemplateColumn 
-                    Header="Project Type"
-                    CellStyle="{StaticResource GridCell_Centering}">
+                    Header="Project Type">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Grid Margin="0,5,0,5" VerticalAlignment="Center">
@@ -247,7 +157,7 @@
                                     Mode=TwoWay, 
                                     ValidatesOnDataErrors=True, 
                                     UpdateSourceTrigger=PropertyChanged}"
-                                    ItemContainerStyle="{StaticResource ListBoxItemSelectOnMouseOver}"
+                                    ItemContainerStyle="{StaticResource ListBoxItem_SelectOnMouseOver}"
                                     SelectedItem="{Binding Path=DataContext.Editing.SelectedListItemElemProperty, 
                                     RelativeSource={RelativeSource AncestorType=UserControl},
                                     Mode=OneWayToSource,
@@ -301,8 +211,7 @@
                 </DataGridTemplateColumn>
 
                 <DataGridTemplateColumn
-                    Header="Year Start"
-                    CellStyle="{StaticResource GridCell_Centering}">
+                    Header="Year Start">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <DatePicker 
@@ -321,8 +230,7 @@
                 </DataGridTemplateColumn>
 
                 <DataGridTemplateColumn
-                    Header="Year End"
-                    CellStyle="{StaticResource GridCell_Centering}">
+                    Header="Year End">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <DatePicker 
@@ -343,8 +251,7 @@
 
                 <DataGridTemplateColumn
                     Header="Price"
-                    Width="80"
-                    CellStyle="{StaticResource GridCell_Centering}">
+                    Width="80">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBox 
@@ -363,8 +270,7 @@
 
                 <DataGridTemplateColumn
                     Header="Description"
-                    Width="200"
-                    CellStyle="{StaticResource GridCell_Centering}">
+                    Width="200">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBox 
@@ -381,8 +287,7 @@
 
                 <DataGridTemplateColumn
                     Header="Delete"
-                    Width="70"
-                    CellStyle="{StaticResource GridCell_Centering}">
+                    Width="70">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Button 
